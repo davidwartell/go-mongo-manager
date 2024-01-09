@@ -31,18 +31,18 @@ defer cancel()
 var myCollection *mongo.Collection
 myCollection, err = mongostore.Instance().Collection(ctx, "MyCollection")
 if err != nil {
-return err
+    return err
 }
 
 // no need return collections but you DO NEED to close mongo cursors if you use them
 var cursor *mongo.Cursor
 cursor, err = collection.Find(ctx, FIXME)
 if err != nil {
-return err
+    return err
 }
 defer func() {
 if cursor != nil {
-_ = cursor.Close(ctx)
+    _ = cursor.Close(ctx)
 }
 }()
 ```

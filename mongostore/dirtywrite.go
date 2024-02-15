@@ -4,6 +4,7 @@ import (
 	"github.com/davidwartell/go-logger-facade/logger"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type RetryFunc func() error
@@ -173,6 +174,8 @@ func RetryDirtyWrite(dirtyWriteFunc RetryFunc) (err error) {
 }
 
 // RetryDirtyWriteDebug is the same as RetryDirtyWrite except it will log a warning every dirty write.
+//
+//goland:noinspection GoUnusedExportedFunction
 func RetryDirtyWriteDebug(dirtyWriteFunc RetryFunc) (err error) {
 	return doRetryDirtyWrite(dirtyWriteFunc, true)
 }
@@ -180,6 +183,10 @@ func RetryDirtyWriteDebug(dirtyWriteFunc RetryFunc) (err error) {
 func doRetryDirtyWrite(dirtyWriteFunc RetryFunc, debug bool) (err error) {
 	var retries int
 	for {
+		var funcStartTime time.Time
+		if debug {
+			funcStartTime = time.Now()
+		}
 		err = dirtyWriteFunc()
 		if !errors.Is(err, DirtyWriteError) {
 			// if error is not a DirtyWriteError give up retry
@@ -187,7 +194,11 @@ func doRetryDirtyWrite(dirtyWriteFunc RetryFunc, debug bool) (err error) {
 		}
 		retries++
 		if debug {
-			logger.Instance().Warn("dirty write detected, retrying", logger.Int("retries", retries), logger.Int("limit", numRetries))
+			logger.Instance().Warn(
+				"dirty write detected, retrying",
+				logger.Int("retries", retries), logger.Int("limit", numRetries),
+				logger.Duration("retryFuncDuration", time.Since(funcStartTime)),
+			)
 		}
 		if retries >= numRetries {
 			err = errors.Errorf("giving up retry after %d dirty writes", retries)

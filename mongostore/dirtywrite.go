@@ -1,6 +1,7 @@
 package mongostore
 
 import (
+	"github.com/davidwartell/go-logger-facade/logger"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -168,6 +169,15 @@ func CheckForDirtyWriteOnDeleteOne(deleteResult *mongo.DeleteResult, inputErr er
 //
 //goland:noinspection GoUnusedExportedFunction
 func RetryDirtyWrite(dirtyWriteFunc RetryFunc) (err error) {
+	return doRetryDirtyWrite(dirtyWriteFunc, false)
+}
+
+// RetryDirtyWriteDebug is the same as RetryDirtyWrite except it will log a warning every dirty write.
+func RetryDirtyWriteDebug(dirtyWriteFunc RetryFunc) (err error) {
+	return doRetryDirtyWrite(dirtyWriteFunc, true)
+}
+
+func doRetryDirtyWrite(dirtyWriteFunc RetryFunc, debug bool) (err error) {
 	var retries int
 	for {
 		err = dirtyWriteFunc()
@@ -176,6 +186,9 @@ func RetryDirtyWrite(dirtyWriteFunc RetryFunc) (err error) {
 			break
 		}
 		retries++
+		if debug {
+			logger.Instance().Warn("dirty write detected, retrying", logger.Int("retries", retries), logger.Int("limit", numRetries))
+		}
 		if retries >= numRetries {
 			err = errors.Errorf("giving up retry after %d dirty writes", retries)
 			break

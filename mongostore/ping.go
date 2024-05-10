@@ -20,7 +20,7 @@ func (a *DataStore) Ping(clientCtx context.Context) error {
 	queryCtx, cancel := a.ContextTimeout(clientCtx)
 	defer cancel()
 
-	client, err = a.clientUnsafeFastWrites(clientCtx)
+	client, err = a.getClient(clientTypeLinearWriteRead).mongoClient(clientCtx)
 	if err != nil {
 		task.LogErrorStruct(taskName, "error getting client for ping", logger.Error(err))
 		return err

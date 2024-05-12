@@ -16,6 +16,7 @@ type clientType int
 type dsStoreClientConfig interface {
 	clientOptions(*DataStore) *options.ClientOptions
 	clientType() clientType
+	sessionOptions(*DataStore) *options.SessionOptions
 }
 
 type dsClient struct {
@@ -98,7 +99,7 @@ func (c *dsClient) database(ctx context.Context) (db *mongo.Database, err error)
 	if client, err = c.mongoClient(ctx); err != nil {
 		task.LogError(
 			taskName,
-			"error getting collection from client",
+			"error getting mongo client",
 			logger.Error(err),
 			logger.Stringer("clientType", c.clientConfig.clientType()),
 		)
@@ -106,6 +107,20 @@ func (c *dsClient) database(ctx context.Context) (db *mongo.Database, err error)
 	}
 	db = client.Database(c.ds.getOptions().databaseName)
 	return
+}
+
+func (c *dsClient) session(ctx context.Context) (sess mongo.Session, err error) {
+	var client *mongo.Client
+	if client, err = c.mongoClient(ctx); err != nil {
+		task.LogError(
+			taskName,
+			"error getting mongo client",
+			logger.Error(err),
+			logger.Stringer("clientType", c.clientConfig.clientType()),
+		)
+		return
+	}
+	return client.StartSession(c.clientConfig.sessionOptions(c.ds))
 }
 
 func (c *dsClient) collection(ctx context.Context, name string) (coll *mongo.Collection, err error) {

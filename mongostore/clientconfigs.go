@@ -36,6 +36,14 @@ func (c readSnapshotReadSecondaryPreferredClientConfig) clientOptions(ds *DataSt
 	return cOpts
 }
 
+func (c readSnapshotReadSecondaryPreferredClientConfig) sessionOptions(ds *DataStore) *options.SessionOptions {
+	sOpts := options.Session()
+	sOpts.SetDefaultReadConcern(readconcern.Snapshot())
+	sOpts.SetDefaultReadPreference(readpref.SecondaryPreferred())
+	sOpts.SetDefaultWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
+	return sOpts
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // clientTypeReadSnapshot
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,6 +60,14 @@ func (c readSnapshotClientConfig) clientOptions(ds *DataStore) *options.ClientOp
 	cOpts.SetReadPreference(readpref.Primary())
 	cOpts.SetWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
 	return cOpts
+}
+
+func (c readSnapshotClientConfig) sessionOptions(ds *DataStore) *options.SessionOptions {
+	sOpts := options.Session()
+	sOpts.SetDefaultReadConcern(readconcern.Snapshot())
+	sOpts.SetDefaultReadPreference(readpref.Primary())
+	sOpts.SetDefaultWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
+	return sOpts
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,6 +88,14 @@ func (c linearWriteReadClientConfig) clientOptions(ds *DataStore) *options.Clien
 	cOpts.SetReadPreference(readpref.Primary())
 	cOpts.SetWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
 	return cOpts
+}
+
+func (c linearWriteReadClientConfig) sessionOptions(ds *DataStore) *options.SessionOptions {
+	sOpts := options.Session()
+	sOpts.SetDefaultReadConcern(readconcern.Linearizable())
+	sOpts.SetDefaultReadPreference(readpref.Primary())
+	sOpts.SetDefaultWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
+	return sOpts
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,6 +123,21 @@ func (c unsafeFastWritesConfig) clientOptions(ds *DataStore) *options.ClientOpti
 	return cOpts
 }
 
+func (c unsafeFastWritesConfig) sessionOptions(ds *DataStore) *options.SessionOptions {
+	sOpts := options.Session()
+	sOpts.SetDefaultReadPreference(readpref.Primary())
+	isFalse := false
+	sOpts.SetDefaultWriteConcern(
+		&writeconcern.WriteConcern{
+			Journal:  &isFalse,
+			W:        1,
+			WTimeout: ds.queryTimeout(),
+		},
+	)
+	sOpts.SetDefaultReadConcern(readconcern.Local())
+	return sOpts
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // clientTypeReadNearest
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,6 +154,14 @@ func (c readNearestConfig) clientOptions(ds *DataStore) *options.ClientOptions {
 	cOpts.SetWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
 	cOpts.SetReadConcern(readconcern.Majority())
 	return cOpts
+}
+
+func (c readNearestConfig) sessionOptions(ds *DataStore) *options.SessionOptions {
+	sOpts := options.Session()
+	sOpts.SetDefaultReadConcern(readconcern.Majority())
+	sOpts.SetDefaultReadPreference(readpref.Nearest())
+	sOpts.SetDefaultWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
+	return sOpts
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +182,14 @@ func (c readSecondaryPreferred) clientOptions(ds *DataStore) *options.ClientOpti
 	return cOpts
 }
 
+func (c readSecondaryPreferred) sessionOptions(ds *DataStore) *options.SessionOptions {
+	sOpts := options.Session()
+	sOpts.SetDefaultReadConcern(readconcern.Majority())
+	sOpts.SetDefaultReadPreference(readpref.SecondaryPreferred())
+	sOpts.SetDefaultWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
+	return sOpts
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // clientTypeForWatch
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +206,14 @@ func (c forWatchConfig) clientOptions(ds *DataStore) *options.ClientOptions {
 	cOpts.SetReadPreference(readpref.SecondaryPreferred())
 	cOpts.SetWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
 	return cOpts
+}
+
+func (c forWatchConfig) sessionOptions(ds *DataStore) *options.SessionOptions {
+	sOpts := options.Session()
+	sOpts.SetDefaultReadConcern(readconcern.Majority())
+	sOpts.SetDefaultReadPreference(readpref.SecondaryPreferred())
+	sOpts.SetDefaultWriteConcern(writeConcernMajorityJournaled(ds.queryTimeout()))
+	return sOpts
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
